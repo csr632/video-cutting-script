@@ -11,7 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "fluent-ffmpeg": "^2.1.2",
-    "fs-extra": "^10.1.0",
-    "video-stitch": "^1.7.1"
+    "fs-extra": "^10.1.0"
   }
 }

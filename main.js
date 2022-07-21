@@ -20,16 +20,17 @@ const outputVideoPath = path.resolve(__dirname, "./merged.mp4");
 
 (async function main() {
   // 可以注释掉其中某几行，分别执行切分与合并
-  for await (const [index, oneSliceData] of sliceData.slice(0, 2).entries()) {
+  for await (const [index, oneSliceData] of sliceData.entries()) {
     await oneSlice(oneSliceData, index, sliceData.length);
   }
-  // await merge()
+  await merge();
 })();
 
 function oneSlice(oneSliceData, index, totalNum) {
   return new Promise((success, fail) => {
     const logPrefix = `[${index + 1}/${totalNum}] `;
     const desc = `${index} - ${oneSliceData.c}`;
+    console.log(`${logPrefix} Conversion start...... ${desc}`);
     ffmpeg(inputVideoPath, { stdoutLines: 1000 })
       .setStartTime(oneSliceData.s)
       .setDuration(oneSliceData.d)
@@ -38,7 +39,7 @@ function oneSlice(oneSliceData, index, totalNum) {
         options: {
           text: desc,
           fontfile: path.join(__dirname, "SourceHanSansCN-Regular.ttf"),
-          fontsize: "36",
+          fontsize: "32",
           x: "10",
           y: "h-th-10",
         },
@@ -61,29 +62,23 @@ function oneSlice(oneSliceData, index, totalNum) {
 }
 
 function merge() {
-  const videoStitch = require("video-stitch");
-  const videoConcat = videoStitch.concat;
-
+  console.log("Merge start");
   return new Promise((success, fail) => {
-    videoConcat({ silent: false, overwrite: true })
-      .clips(
-        sliceData.map((oneSliceData, index) => {
-          return {
-            fileName: getPathForSlice(index),
-          };
-        })
-      )
-      .output(outputVideoPath)
-      .concat()
-      .then((outputFileName) => {
-        console.error("merge done:", outputFileName);
+    const task = ffmpeg();
+    sliceData.forEach((oneSliceData, index) => {
+      const slicePath = getPathForSlice(index);
+      task.mergeAdd(slicePath);
+    });
+    task
+      .on("error", function (err) {
+        console.error("Merge error: " + err.message);
+        fail(err);
+      })
+      .on("end", function () {
+        console.log("Merging finished!");
         success();
       })
-      .catch((err) => {
-        console.error("merge err:");
-        console.error(err);
-        fail();
-      });
+      .mergeToFile(outputVideoPath, path.resolve(__dirname, "./tmp2"));
   });
 }
 
