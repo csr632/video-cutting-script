@@ -21,13 +21,19 @@ const outputVideoPath = path.resolve(__dirname, "./merged.mp4");
 // ---------以上几个参数需要使用者检查和提供
 
 (async function main() {
-  // 可以注释掉其中某几行，分别执行切分与合并
-  for await (const [index, oneSliceData] of sliceData.entries()) {
-    await oneSlice(oneSliceData, index, sliceData.length);
+  try {
+    // 可以注释掉其中某几行，分别执行切分与合并
+    for await (const [index, oneSliceData] of sliceData.entries()) {
+      await oneSlice(oneSliceData, index, sliceData.length);
+    }
+    await merge();
+  } catch (err) {
+    console.error(err);
   }
-  await merge();
 })();
 
+// 依赖库fluent-ffmpeg的文档：
+// https://www.npmjs.com/package/fluent-ffmpeg
 function oneSlice(oneSliceData, index, totalNum) {
   return new Promise((success, fail) => {
     const logPrefix = `[${index + 1}/${totalNum}] `;
@@ -48,12 +54,11 @@ function oneSlice(oneSliceData, index, totalNum) {
       })
       .output(getPathForSlice(index))
       .on("error", function (err, stdout, stderr) {
-        console.error(`${logPrefix} Conversion error: ${desc}`);
-        console.error(err);
+        console.error(`${logPrefix} Conversion error.`);
         console.error("-".repeat(20) + "stderr:");
         console.error(stderr);
         console.error("-".repeat(20) + "stderr end.");
-        fail();
+        fail(err);
       })
       .on("end", function (stdout, stderr) {
         console.log(`${logPrefix} Conversion done: ${desc}`);
@@ -72,12 +77,15 @@ function merge() {
       task.mergeAdd(slicePath);
     });
     task
-      .on("error", function (err) {
+      .on("error", function (err, stdout, stderr) {
         console.error("Merge error: " + err.message);
+        console.error("-".repeat(20) + "stderr:");
+        console.error(stderr);
+        console.error("-".repeat(20) + "stderr end.");
         fail(err);
       })
-      .on("end", function () {
-        console.log("Merging finished!");
+      .on("end", function (stdout, stderr) {
+        console.log("Merge finished!");
         success();
       })
       .mergeToFile(outputVideoPath, path.resolve(__dirname, "./tmp2"));
