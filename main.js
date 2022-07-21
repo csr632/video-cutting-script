@@ -4,9 +4,6 @@ const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const fs = require("fs-extra");
 
-// 手动设置ffmpeg的executable路径
-// Ffmpeg.setFfmpegPath(path)
-
 // 需要在这个文件定义要截取的视频片段
 const { sliceData } = require("./sliceData");
 
@@ -17,6 +14,10 @@ const outputDir = path.resolve(__dirname, "./tmp");
 fs.ensureDirSync(outputDir);
 // 合并后视频的路径
 const outputVideoPath = path.resolve(__dirname, "./merged.mp4");
+
+// 如果ffmpeg没有在PATH中，需要手动设置ffmpeg的executable路径
+// 详见fluent-ffmpeg的文档：https://www.npmjs.com/package/fluent-ffmpeg
+// Ffmpeg.setFfmpegPath(path)
 
 // ---------以上几个参数需要使用者检查和提供
 
@@ -32,8 +33,6 @@ const outputVideoPath = path.resolve(__dirname, "./merged.mp4");
   }
 })();
 
-// 依赖库fluent-ffmpeg的文档：
-// https://www.npmjs.com/package/fluent-ffmpeg
 function oneSlice(oneSliceData, index, totalNum) {
   return new Promise((success, fail) => {
     const logPrefix = `[${index + 1}/${totalNum}] `;
@@ -46,6 +45,7 @@ function oneSlice(oneSliceData, index, totalNum) {
         filter: "drawtext",
         options: {
           text: desc,
+          // 中文字体来自： https://github.com/Pal3love/Source-Han-TrueType
           fontfile: path.join(__dirname, "SourceHanSansCN-Regular.ttf"),
           fontsize: "32",
           x: "10",
