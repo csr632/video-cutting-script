@@ -18,6 +18,8 @@ fs.ensureDirSync(outputDir);
 // 合并后视频的路径
 const outputVideoPath = path.resolve(__dirname, "./merged.mp4");
 
+// ---------以上几个参数需要使用者检查和提供
+
 (async function main() {
   // 可以注释掉其中某几行，分别执行切分与合并
   for await (const [index, oneSliceData] of sliceData.entries()) {
